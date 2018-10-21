@@ -9,6 +9,9 @@ __pycache__/
 #Ignore environment
 Reacher_*/
 
+#Ignore vscode stuff	
+.vscode*/
+
 # Distribution / packaging
 .Python
 build/
