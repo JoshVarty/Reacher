@@ -19,9 +19,10 @@ class Agent:
         distribution = torch.distributions.Categorical(logits=logits)
         action = distribution.sample()
 
-        log_prob = distribution.log_prob(action)
-        log_prob = torch.unsqueeze(log_prob, -1)
-        return action, log_prob, distribution.entropy().unsqeeze(-1)
+        log_prob = distribution.log_prob(action).unsqueeze(-1)
+        entropy = distribution.entropy().unsqueeze(-1)
+        
+        return action, log_prob, entropy
 
     def critic_forward(self, states):
         states = torch.tensor(states).float().to(self.device)
