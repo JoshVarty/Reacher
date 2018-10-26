@@ -8,6 +8,7 @@ class Agent:
         self.actor = actor
         self.critic = critic
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.std_dev = torch.nn.Parameter(torch.ones(num_agents, action_size)).to(self.device)
 
     def soft_update(self, target, src):
         pass
@@ -15,14 +16,13 @@ class Agent:
 
     def actor_forward(self, states):
         states = torch.tensor(states).float().to(self.device)
-        logits = self.actor(states)
-        distribution = torch.distributions.Categorical(logits=logits)
-        action = distribution.sample()
-
-        log_prob = distribution.log_prob(action).unsqueeze(-1)
-        entropy = distribution.entropy().unsqueeze(-1)
+        means = self.actor(states)
+        distributions = torch.distributions.Normal(means, self.std_dev)
+        action = distributions.sample()
+        log_prob = distributions.log_prob(action)
+        log_prob = torch.sum(log_prob, dim=1, keepdim=True)
         
-        return action, log_prob, entropy
+        return action, log_prob
 
     def critic_forward(self, states):
         states = torch.tensor(states).float().to(self.device)
