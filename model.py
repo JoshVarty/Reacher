@@ -1,1 +1,53 @@
- 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
+class FCNetwork(nn.Module):
+
+    def __init__(self, state_size, action_size, output_gate=None):
+
+        super(FCNetwork, self).__init__()
+
+        self.fc1 = nn.Linear(state_size, 1024)
+        self.fc2 = nn.Linear(1024, 1024)
+        self.fc3 = nn.Linear(1024, action_size)
+        self.output_gate = output_gate
+
+
+    def forward(self, input):
+
+        x = F.relu(self.fc1(input))
+        x = F.relu(self.fc2(input))
+        x = F.relu(self.fc3(input))
+
+        if self.output_gate is not None:
+            x = self.output_gate(x)
+
+        return x
+
+class ActorCriticNetwork(nn.Module):
+
+    def __init__(self, state_size, action_size):
+        super(ActorCriticNetwork, self).__init__()
+
+        self.actor = FCNetwork(state_size, action_size, F.tanh)
+        self.critic = FCNetwork(state_size, 1)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.std = nn.Parameter(torch.ones(1, action_size)).to(self.device)
+        self.to(self.device)
+
+    def forward(self, state):
+        state = torch.Tensor(state).to(self.device)
+
+        #Get action
+        a = self.actor(state)
+        distribution = torch.distributions.Normal(a, self.std)
+        action = distribution.sample()
+        log_prob = distribution.log_prob(action)
+        log_prob = torch.sum(log_prob, dim=1, keepdim=True)
+
+        #Get value from critic
+        value = self.critic(state)
+
+        return action, log_prob, value
