@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 
 class FCNetwork(nn.Module):
 
@@ -18,8 +17,8 @@ class FCNetwork(nn.Module):
     def forward(self, input):
 
         x = F.relu(self.fc1(input))
-        x = F.relu(self.fc2(input))
-        x = F.relu(self.fc3(input))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
 
         if self.output_gate is not None:
             x = self.output_gate(x)
@@ -37,13 +36,14 @@ class ActorCriticNetwork(nn.Module):
         self.std = nn.Parameter(torch.ones(1, action_size)).to(self.device)
         self.to(self.device)
 
-    def forward(self, state):
-        state = torch.Tensor(state).to(self.device)
+    def forward(self, state, action = None):
+        #state = torch.Tensor(state).to(self.device)
 
         #Get action
         a = self.actor(state)
         distribution = torch.distributions.Normal(a, self.std)
-        action = distribution.sample()
+        if action is None:
+            action = distribution.sample()
         log_prob = distribution.log_prob(action)
         log_prob = torch.sum(log_prob, dim=1, keepdim=True)
 
