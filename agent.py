@@ -63,8 +63,6 @@ class Agent:
         advantages = torch.zeros((self.num_agents, 1)).cuda()
         returns = last_value.detach()
 
-        all_states = np.zeros((len(rollout)) * 20)
-
         for i in reversed(range(len(rollout) - 1)):
             states, value, actions, log_probs, rewards, dones = rollout[i]
             dones = torch.Tensor(dones).unsqueeze(1).cuda()
@@ -82,7 +80,8 @@ class Agent:
 
         mini_batch_number = 32
         batcher = Batcher(states.size(0) // mini_batch_number, [np.arange(states.size(0))])
-        for _ in range(self.learning_rounds):
+        for i in range(self.learning_rounds):
+            batcher.reset()
             batcher.shuffle()
             while not batcher.end():
                 batch_indices = batcher.next_batch()[0]
