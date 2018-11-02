@@ -1,3 +1,9 @@
+#######################################################################
+# Copyright (C) 2017 Shangtong Zhang(zhangshangtong.cpp@gmail.com)    #
+# Permission given to modify the code as long as you keep this        #
+# declaration at the top                                              #
+#######################################################################
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,10 +18,13 @@ class Agent:
         self.brain_name = brain_name
         self.num_agents = num_agents
         self.network = ActorCriticNetwork(state_size, action_size)
-        self.optimizer = optim.Adam(self.network.parameters(), 4e-4, eps=1e-5)
+        self.optimizer = optim.Adam(self.network.parameters(), 2e-4, eps=1e-5)
 
         self.discount_rate = 0.99
         self.tau = 0.95
+        self.learning_rounds = 10
+        self.ppo_clip = 0.2         #The original paper specifices 0.2 as the best clip
+        self.gradient_clip = 5
 
 
     def generate_rollout(self):
@@ -26,11 +35,10 @@ class Agent:
         env_info = self.environment.reset(train_mode=True)[self.brain_name]
         states = env_info.vector_observations
 
-        i = 0
+        
         #Generate rollout from an entire episode
         while True:
 
-            i = i + 1
             states = torch.Tensor(states).cuda()
             actions, log_probs, values = self.network(states)
             env_info = self.environment.step(actions.cpu().detach().numpy())[self.brain_name]
@@ -74,7 +82,7 @@ class Agent:
 
         mini_batch_number = 32
         batcher = Batcher(states.size(0) // mini_batch_number, [np.arange(states.size(0))])
-        for _ in range(10):
+        for _ in range(self.learning_rounds):
             batcher.shuffle()
             while not batcher.end():
                 batch_indices = batcher.next_batch()[0]
@@ -88,14 +96,14 @@ class Agent:
                 _, log_probs, values = self.network(sampled_states, sampled_actions)
                 ratio = (log_probs - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
-                obj_clipped = ratio.clamp(1.0 - 0.2, 1.0 + 0.2) * sampled_advantages
+                obj_clipped = ratio.clamp(1.0 - self.ppo_clip, 1.0 + self.ppo_clip) * sampled_advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean(0)
 
                 value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 
                 self.optimizer.zero_grad()
                 (policy_loss + value_loss).backward()
-                nn.utils.clip_grad_norm_(self.network.parameters(), 5)
+                nn.utils.clip_grad_norm_(self.network.parameters(), self.gradient_clip)
                 self.optimizer.step()
 
     def step(self):
