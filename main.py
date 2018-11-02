@@ -3,9 +3,8 @@ import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
 import torch
-import torch.optim as optim
 from agent import Agent
-
+from model import ActorCriticNetwork
 
 env = UnityEnvironment(file_name='Reacher_Linux_NoVis/Reacher.x86_64', worker_id=12)
 #env = UnityEnvironment(file_name='Reacher_Linux/Reacher.x86_64', worker_id=122)
@@ -30,31 +29,8 @@ state_size = brain.vector_observation_space_size
 print('Size of each state:', state_size)
 
 
-def run_until_done(env, brain_name, agent):
-    online_rewards = np.zeros(num_agents)
-    env_info = env.reset(train_mode=True)[brain_name]    # reset environment
-    states = env_info.vector_observations                # get current state
 
-    while True:
-
-        states = torch.Tensor(states).cuda()
-        actions, _, _ = agent.network(states)                                         # choose actions
-        
-        env_info = env.step(actions.cpu().detach().numpy())[brain_name]                            # send actions to environment
-        next_states = env_info.vector_observations                          # get next state (for each agent)
-        rewards = env_info.rewards                                          # get reward (for each agent)
-        dones = env_info.local_done                                         # see if episode finished
-
-        online_rewards += rewards
-        if np.any(dones):
-            break
-
-        #Advance to next state
-        states = next_states
-
-    return np.mean(online_rewards)
-
-def a2c(agent, num_agents, num_episodes=300):
+def a2c(agent, num_agents, num_episodes=400):
 
     all_scores = []
     max_so_far = 0
@@ -62,12 +38,11 @@ def a2c(agent, num_agents, num_episodes=300):
 
     for i_episode in range(1, num_episodes + 1):
 
-        agent.step()
-        avg_scores = run_until_done(env, brain_name, agent)
-        scores_window.append(avg_scores)
-        all_scores.append(avg_scores)
+        avg_score = agent.step()
+        scores_window.append(avg_score)
+        all_scores.append(avg_score)
 
-        avg_score = np.mean(scores_window)
+        #avg_score = np.mean(scores_window)
         if avg_score > max_so_far:
             torch.save(agent.network.state_dict(), "partial.ckpt")
             max_so_far = avg_score
