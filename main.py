@@ -33,7 +33,6 @@ print('Size of each state:', state_size)
 def a2c(agent, num_agents, num_episodes=400):
 
     all_scores = []
-    max_so_far = 0
     scores_window = deque(maxlen=100)
 
     for i_episode in range(1, num_episodes + 1):
@@ -42,17 +41,12 @@ def a2c(agent, num_agents, num_episodes=400):
         scores_window.append(avg_score)
         all_scores.append(avg_score)
 
-        #avg_score = np.mean(scores_window)
-        if avg_score > max_so_far:
-            torch.save(agent.network.state_dict(), "partial.ckpt")
-            max_so_far = avg_score
-
         if i_episode % 5 == 0:
             print("avg score:", avg_score, "at:", i_episode)
 
         if np.mean(scores_window) >= 30.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-            torch.save(agent.network.state_dict(), 'completed.pth')
+            torch.save(agent.network.state_dict(), 'solution.ckpt')
             break
 
     return all_scores
