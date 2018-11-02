@@ -41,8 +41,8 @@ def a2c(agent, num_agents, num_episodes=400):
         scores_window.append(avg_score)
         all_scores.append(avg_score)
 
-        if i_episode % 5 == 0:
-            print("avg score:", avg_score, "at:", i_episode)
+        if i_episode % 25 == 0:
+            print("Episode score:", np.mean(scores_window), "at:", i_episode)
 
         if np.mean(scores_window) >= 30.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
@@ -52,7 +52,7 @@ def a2c(agent, num_agents, num_episodes=400):
     return all_scores
 
 
-#build networks
+#create agent and run against environment
 agent = Agent(env, brain_name, num_agents, state_size, action_size)
 scores = a2c(agent, num_agents)
             
