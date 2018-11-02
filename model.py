@@ -8,9 +8,9 @@ class FCNetwork(nn.Module):
 
         super(FCNetwork, self).__init__()
 
-        self.fc1 = nn.Linear(state_size, 1024)
-        self.fc2 = nn.Linear(1024, 1024)
-        self.fc3 = nn.Linear(1024, action_size)
+        self.fc1 = nn.Linear(state_size, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, action_size)
         self.output_gate = output_gate
 
 
