@@ -15,10 +15,9 @@ class FCNetwork(nn.Module):
 
 
     def forward(self, input):
-
         x = F.relu(self.fc1(input))
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        x = self.fc3(x)
 
         if self.output_gate is not None:
             x = self.output_gate(x)
