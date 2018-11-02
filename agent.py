@@ -11,10 +11,8 @@ class Agent:
         self.environment = environment
         self.brain_name = brain_name
         self.num_agents = num_agents
-        self.state_size = state_size
-        self.action_size = action_size
         self.network = ActorCriticNetwork(state_size, action_size)
-        self.optimizer = optim.Adam(self.network.parameters(), 1e-4, eps=1e-5)
+        self.optimizer = optim.Adam(self.network.parameters(), 4e-4, eps=1e-5)
 
         self.discount_rate = 0.99
         self.tau = 0.95
@@ -22,13 +20,14 @@ class Agent:
 
     def generate_rollout(self):
         rollout = []
-        online_rewards = np.zeros(self.num_agents)
+        episode_rewards = np.zeros(self.num_agents)
 
         #reset environment
         env_info = self.environment.reset(train_mode=True)[self.brain_name]
         states = env_info.vector_observations
 
         i = 0
+        #Generate rollout from an entire episode
         while True:
 
             i = i + 1
@@ -39,7 +38,7 @@ class Agent:
             dones = np.array(env_info.local_done)
             next_states = env_info.vector_observations
 
-            online_rewards += rewards
+            episode_rewards += rewards
             rollout.append([states, values.detach(), actions.detach(), log_probs.detach(), rewards, 1 - dones])
             states = next_states
 
@@ -49,31 +48,29 @@ class Agent:
         states = torch.Tensor(states).cuda()
         _,_,last_value = self.network(states)
         rollout.append([states, last_value, None, None, None, None])
-        return rollout, last_value
+        return rollout, last_value, episode_rewards
 
-    def step(self):
-        rollout, last_value = self.generate_rollout()
+    def process_rollout(self, rollout, last_value):
         processed_rollout = [None] * (len(rollout) - 1)
         advantages = torch.zeros((self.num_agents, 1)).cuda()
         returns = last_value.detach()
 
-        for i in reversed(range(len(rollout) - 1)):
-            states, values, actions, log_probs, rewards, dones = rollout[i]
+        all_states = np.zeros((len(rollout)) * 20)
 
+        for i in reversed(range(len(rollout) - 1)):
+            states, value, actions, log_probs, rewards, dones = rollout[i]
             dones = torch.Tensor(dones).unsqueeze(1).cuda()
             rewards = torch.Tensor(rewards).unsqueeze(1).cuda()
-            #actions = torch.Tensor(actions)
-            #states = torch.Tensor(states)
-            next_value = rollout[i + 1][1].cuda()
+            next_value = rollout[i + 1][1]
+            returns = rewards + self.discount_rate * dones * returns
 
-            returns = rewards + (self.discount_rate * dones * returns)
-
-            td_error = rewards + self.discount_rate * dones * next_value.detach() - values.detach()
+            td_error = rewards + self.discount_rate * dones * next_value.detach() - value.detach()
             advantages = advantages * self.tau * self.discount_rate * dones + td_error
             processed_rollout[i] = [states, actions, log_probs, returns, advantages]
 
-        states, actions, log_probs_old, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
-        advantages = (advantages - advantages.mean()) / advantages.std()        
+        return processed_rollout
+
+    def train_network(self, states, actions, log_probs_old, returns, advantages):
 
         mini_batch_number = 32
         batcher = Batcher(states.size(0) // mini_batch_number, [np.arange(states.size(0))])
@@ -91,15 +88,28 @@ class Agent:
                 _, log_probs, values = self.network(sampled_states, sampled_actions)
                 ratio = (log_probs - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
-                obj_clipped = ratio.clamp(1.0 - 0.2,
-                                          1.0 + 0.2) * sampled_advantages
+                obj_clipped = ratio.clamp(1.0 - 0.2, 1.0 + 0.2) * sampled_advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean(0)
+
                 value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 
                 self.optimizer.zero_grad()
                 (policy_loss + value_loss).backward()
                 nn.utils.clip_grad_norm_(self.network.parameters(), 5)
                 self.optimizer.step()
+
+    def step(self):
+        # Run a single episode to generate a rollout
+        rollout, last_value, episode_rewards = self.generate_rollout()
+        # Process the rollout to calculate advantages
+        processed_rollout = self.process_rollout(rollout, last_value)
+        states, actions, log_probs_old, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
+        # Normalize the advantages
+        advantages = (advantages - advantages.mean()) / advantages.std()
+        # Train the network
+        self.train_network(states, actions, log_probs_old, returns, advantages)
+        #Return the average reward across all agents for this episode
+        return np.mean(episode_rewards)
 
 
 class Batcher:
@@ -128,11 +138,4 @@ class Batcher:
     def shuffle(self):
         indices = np.arange(self.num_entries)
         np.random.shuffle(indices)
-
-
-
-
-
-
-
-
+        self.data = [d[indices] for d in self.data]
