@@ -27,7 +27,7 @@ print('Size of each action:', action_size)
 # size of each state
 state_size = brain.vector_observation_space_size
 print('Size of each state:', state_size)
-
+    
 
 
 def a2c(agent, num_agents, num_episodes=400):
