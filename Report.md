@@ -56,7 +56,7 @@ L<sub>t</sub><sup>VF</sup> is given as:
 value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 ```
 
-After calculating `policy_loss` and `value_loss` we simply add the two losses together and backpropagate. We repeat this process `5` times in total before returning to begin collecting a new rollout.
+After calculating `policy_loss` and `value_loss` we simply add the two losses together and backpropagate. We repeat this process `10` times in total before returning to begin collecting a new rollout.
 
 **Note**: *I have used the [`Batcher`](https://github.com/ShangtongZhang/DeepRL/blob/95ac4ea17e82fe166b8c8b737da87db0b2097898/deep_rl/utils/misc.py#L56-L81) class taken from Shangtong Zhang's DeepRL network. I have corrected a bug in this implementation to ensure that `Batcher.reset()` is called whenever `Batch.shuffle()` is called to shuffle the data. Without this change, the agent will run one pass of optimization over the dataset, but skip the remaining passes because the batcher incorrectly reports that it has already processed all of the data.*
 
@@ -102,9 +102,9 @@ The `input` to both networks is the current state (a vector with `33` elements).
 
 ## Results
 
-In my experience the agent can achieve an average score of 30 after ~100 episodes of training.
+In my experience the agent can achieve an average score of 30 after ~75 episodes of training.
 
-![]()
+![](https://i.gyazo.com/e14d5c2b30a12a4c17af517423ed3033.png)
 
 A sample run generated from [`Visualization.ipynb`](https://github.com/JoshVarty/Reacher/blob/master/Visualization.ipynb)
 
