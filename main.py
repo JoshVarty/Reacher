@@ -41,7 +41,7 @@ def a2c(agent, num_agents, num_episodes=400):
         scores_window.append(avg_score)
         all_scores.append(avg_score)
 
-        if i_episode % 25 == 0:
+        if i_episode % 5 == 0:
             print("Episode score:", np.mean(scores_window), "at:", i_episode)
 
         if np.mean(scores_window) >= 30.0:

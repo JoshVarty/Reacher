@@ -25,6 +25,7 @@ class Agent:
         self.learning_rounds = 10
         self.ppo_clip = 0.2         #The original paper specifices 0.2 as the best clip
         self.gradient_clip = 5
+        self.mini_batch_number = 64
 
 
     def generate_rollout(self):
@@ -78,8 +79,7 @@ class Agent:
 
     def train_network(self, states, actions, log_probs_old, returns, advantages):
 
-        mini_batch_number = 32
-        batcher = Batcher(states.size(0) // mini_batch_number, [np.arange(states.size(0))])
+        batcher = Batcher(states.size(0) // self.mini_batch_number, [np.arange(states.size(0))])
         for _ in range(self.learning_rounds):
             batcher.shuffle()
             while not batcher.end():
@@ -145,4 +145,6 @@ class Batcher:
         indices = np.arange(self.num_entries)
         np.random.shuffle(indices)
         self.data = [d[indices] for d in self.data]
+        #JoshVarty: We must call reset() after shuffling or else we
+        #won't be able to iterate over the newly shuffled data
         self.reset()

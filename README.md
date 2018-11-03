@@ -65,7 +65,7 @@ pip install .
 
 In my experience the agent can achieve an average score of 30 after ~300 episodes of training.
 
-![https://i.imgur.com/KKchrqW.png](https://i.imgur.com/KKchrqW.png)
+![](https://i.gyazo.com/e14d5c2b30a12a4c17af517423ed3033.png)
 
 A sample run generated from [`Visualization.ipynb`](https://github.com/JoshVarty/Reacher/blob/master/Visualization.ipynb)
 
