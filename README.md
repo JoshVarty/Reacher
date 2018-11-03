@@ -4,8 +4,8 @@ Unity's Reacher Environment is an environment in which and agent must control ro
 
 The agent interacts with the environment via the following:
 
-    - It is fed 20 sets of observations each with a vector of 33 elements
-    - For each of the 20 arms, the agent must provide an action vector representing 4 continous actions
+  - It is fed 20 sets of observations each with a vector of 33 elements
+  - For each of the 20 arms, the agent must provide an action vector representing 4 continous actions
 
 
 
