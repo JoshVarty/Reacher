@@ -80,8 +80,7 @@ class Agent:
 
         mini_batch_number = 32
         batcher = Batcher(states.size(0) // mini_batch_number, [np.arange(states.size(0))])
-        for i in range(self.learning_rounds):
-            batcher.reset()
+        for _ in range(self.learning_rounds):
             batcher.shuffle()
             while not batcher.end():
                 batch_indices = batcher.next_batch()[0]
@@ -146,3 +145,4 @@ class Batcher:
         indices = np.arange(self.num_entries)
         np.random.shuffle(indices)
         self.data = [d[indices] for d in self.data]
+        self.reset()
