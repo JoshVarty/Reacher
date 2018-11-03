@@ -102,7 +102,7 @@ The `input` to both networks is the current state (a vector with `33` elements).
 
 ## Results
 
-In my experience the agent can achieve an average score of 30 after ~75 episodes of training.
+In my experience the agent can achieve an average score of 30 after ~100 episodes of training.
 
 ![](https://i.gyazo.com/e14d5c2b30a12a4c17af517423ed3033.png)
 
