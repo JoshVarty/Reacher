@@ -1,6 +1,6 @@
 # Reacher
 
-Unity's Reacher Environment is an environment in which and agent must control robotic hands with the goal of keeping the ends of the arms within a sphere. This repository uses the 20-agent environment in which a single agent must control 20 robotic arms.
+Unity's Reacher Environment is an environment in which an agent must control robotic hands with the goal of keeping the ends of the arms within a sphere. This repository uses the 20-agent environment in which a single agent must control 20 robotic arms.
 
 The agent interacts with the environment via the following:
 
